@@ -1,0 +1,34 @@
+{
+  "name": "multi-agent-backend",
+  "version": "1.0.0",
+  "description": "Multi-agent AI backend with Koa2",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:init": "ts-node --transpile-only src/db/schema.ts"
+  },
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "@koa/router": "^15.0.0",
+    "axios": "^1.7.0",
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.0",
+    "koa": "^2.15.3",
+    "koa-bodyparser": "^4.4.1",
+    "koa-json": "^2.0.2",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/koa": "^2.15.0",
+    "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa-json": "^2.0.23",
+    "@types/koa__cors": "^5.0.0",
+    "@types/koa__router": "^12.0.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

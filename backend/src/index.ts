@@ -1,0 +1,54 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+import Koa, { DefaultState, DefaultContext } from 'koa';
+import json from 'koa-json';
+import bodyParser from 'koa-bodyparser';
+import cors from '@koa/cors';
+import chatRouter from './routes/chat';
+
+const app = new Koa();
+const PORT = Number(process.env.PORT) || 3001;
+
+// Middleware - CORS 允许所有来源
+app.use(cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+}));
+app.use(json());
+app.use(bodyParser());
+
+// Routes
+app.use(chatRouter.routes());
+app.use(chatRouter.allowedMethods());
+
+// Health check
+app.use(async (ctx: DefaultContext, next: () => Promise<void>) => {
+  if (ctx.path === '/health') {
+    ctx.body = { status: 'ok', timestamp: new Date().toISOString() };
+    return;
+  }
+  await next();
+});
+
+// Start server
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📝 Available endpoints:`);
+  console.log(`   POST /chat/psychological - 心理疏导智能体`);
+  console.log(`   POST /chat/aiTools - AI 工具推荐智能体`);
+  console.log(`   GET  /history/:agentType - 历史记录`);
+  console.log(`   POST /intent-check - 意图检测`);
+  console.log(`   GET  /health - 健康检查`);
+});
+
+// Handle shutdown
+process.on('SIGTERM', () => {
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+export default app;
