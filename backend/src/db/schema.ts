@@ -9,6 +9,7 @@ db.exec(`
     agent_response TEXT NOT NULL,
     intent_score REAL DEFAULT 0,
     is_blocked INTEGER DEFAULT 0,
+    session_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
@@ -22,6 +23,32 @@ db.exec(`
     metadata TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+  )
+`);
+
+// Career assessment sessions table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS career_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    stage TEXT DEFAULT 'questioning',
+    answers TEXT DEFAULT '[]',
+    question_index INTEGER DEFAULT 0,
+    current_question TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// Documents table for markdown reports
+db.exec(`
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    content TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES career_sessions(id)
   )
 `);
 

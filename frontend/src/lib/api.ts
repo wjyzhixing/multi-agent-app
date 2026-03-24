@@ -35,12 +35,20 @@ export interface Message {
   timestamp: Date;
 }
 
+export interface Document {
+  id: string;
+  session_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Streaming chat function
 export async function streamChat(
-  agentType: 'psychological' | 'aiTools',
+  agentType: 'psychological' | 'aiTools' | 'career',
   input: string,
   onChunk: (text: string) => void,
-  onComplete: (fullText: string) => void,
+  onComplete: (fullText: string, sessionId?: string, documentReady?: boolean) => void,
   onError: (error: string) => void
 ): Promise<void> {
   try {
@@ -63,6 +71,8 @@ export async function streamChat(
 
     const decoder = new TextDecoder();
     let fullText = '';
+    let sessionId: string | undefined;
+    let documentReady = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -91,7 +101,9 @@ export async function streamChat(
 
             if (json.done && json.fullText) {
               fullText = json.fullText;
-              onComplete(fullText);
+              sessionId = json.sessionId;
+              documentReady = json.documentReady || false;
+              onComplete(fullText, sessionId, documentReady);
               return;
             }
 
@@ -109,5 +121,55 @@ export async function streamChat(
     onComplete(fullText);
   } catch (error: any) {
     onError(error.message || '请求失败');
+  }
+}
+
+// Document API
+export async function getDocument(sessionId: string): Promise<Document | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${sessionId}`);
+    const data = await response.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function updateDocument(sessionId: string, content: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${sessionId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    return false;
+  }
+}
+
+// History API
+export async function getHistory(agentType?: string, limit: number = 20): Promise<Message[]> {
+  try {
+    const url = agentType
+      ? `${API_BASE_URL}/history/${agentType}?limit=${limit}`
+      : `${API_BASE_URL}/history?limit=${limit}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success && Array.isArray(data.data)) {
+      return data.data.map((item: any) => ({
+        id: item.id,
+        role: 'user' as const,
+        content: item.user_input,
+        timestamp: new Date(item.created_at)
+      }));
+    }
+    return [];
+  } catch (error) {
+    return [];
   }
 }

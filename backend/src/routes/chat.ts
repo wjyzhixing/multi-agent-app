@@ -1,15 +1,17 @@
 import Router from '@koa/router';
 import { PsychologicalAgent } from '../agents/psychological';
 import { AIToolsAgent } from '../agents/ai-tools';
+import { CareerAgent } from '../agents/career';
 import { getBlockMessage } from '../middleware/intent';
 import { checkIntentWithAI } from '../lib/ai-client';
-import { initConversation, getConversationHistory } from '../db/init';
+import { initConversation, getConversationHistory, getDocument, updateDocument } from '../db/init';
 import { ParameterizedContext } from 'koa';
 const router = new Router({ prefix: '' });
 
 const agents = {
   psychological: new PsychologicalAgent(),
-  aiTools: new AIToolsAgent()
+  aiTools: new AIToolsAgent(),
+  career: new CareerAgent()
 };
 
 interface ChatRequest {
@@ -53,11 +55,11 @@ router.post('/chat/:agentType/stream', async (ctx: ParameterizedContext) => {
 
   const agent = agents[agentType as keyof typeof agents];
 
-  // Use AI for intent recognition
-  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools');
+  // Use AI for intent recognition (skip for career agent)
+  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career');
 
   // If intent is not relevant, return blocked response
-  if (!intentResult.isRelevant) {
+  if (!intentResult.isRelevant && agentType !== 'career') {
     const blockMessage = getBlockMessage(agentType as 'psychological' | 'aiTools');
     ctx.type = 'text/event-stream';
     ctx.set('Cache-Control', 'no-cache');
@@ -104,10 +106,10 @@ router.post('/chat/:agentType', async (ctx: ParameterizedContext) => {
 
   const agent = agents[agentType as keyof typeof agents];
 
-  // Use AI for intent recognition
-  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools');
+  // Use AI for intent recognition (skip for career agent)
+  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career');
 
-  if (!intentResult.isRelevant) {
+  if (!intentResult.isRelevant && agentType !== 'career') {
     const blockMessage = getBlockMessage(agentType as 'psychological' | 'aiTools');
 
     ctx.body = {
@@ -162,7 +164,7 @@ router.get('/history', async (ctx: ParameterizedContext) => {
 
 // Intent check endpoint
 router.post('/intent-check', async (ctx: ParameterizedContext) => {
-  const body = ctx.request.body as { input: string; agentType: 'psychological' | 'aiTools' };
+  const body = ctx.request.body as { input: string; agentType: 'psychological' | 'aiTools' | 'career' };
   const { input, agentType } = body;
 
   if (!input || !agentType) {
@@ -179,6 +181,48 @@ router.post('/intent-check', async (ctx: ParameterizedContext) => {
   ctx.body = {
     success: true,
     data: result
+  };
+});
+
+// Document endpoints for career assessment
+router.get('/documents/:sessionId', async (ctx: ParameterizedContext) => {
+  const { sessionId } = ctx.params;
+
+  const doc = getDocument(sessionId);
+
+  if (!doc) {
+    ctx.status = 404;
+    ctx.body = {
+      success: false,
+      error: 'Document not found'
+    };
+    return;
+  }
+
+  ctx.body = {
+    success: true,
+    data: doc
+  };
+});
+
+router.put('/documents/:sessionId', async (ctx: ParameterizedContext) => {
+  const { sessionId } = ctx.params;
+  const body = ctx.request.body as { content: string };
+
+  if (!body.content) {
+    ctx.status = 400;
+    ctx.body = {
+      success: false,
+      error: 'Content is required'
+    };
+    return;
+  }
+
+  updateDocument(sessionId, body.content);
+
+  ctx.body = {
+    success: true,
+    message: 'Document updated'
   };
 });
 

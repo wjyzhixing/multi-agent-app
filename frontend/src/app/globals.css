@@ -17,3 +17,9 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Mermaid chart text colors */
+.mermaid-container .legend text,
+.mermaid-container .pieTitleText {
+  fill: #171717 !important;
+}

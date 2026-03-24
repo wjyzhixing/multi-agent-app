@@ -7,6 +7,7 @@ import { useState } from 'react';
 const menuItems = [
   { path: '/agents/psychological', label: '心理疏导' },
   { path: '/agents/ai-tools', label: 'AI 工具' },
+  { path: '/agents/career', label: '职业测评' },
 ];
 
 export default function Sidebar() {

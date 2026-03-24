@@ -143,7 +143,16 @@ export async function chatWithAIStream(request: AIChatRequest): Promise<PassThro
 }
 
 // AI-based intent recognition
-export async function checkIntentWithAI(input: string, agentType: 'psychological' | 'aiTools'): Promise<{ isRelevant: boolean; score: number; reason: string }> {
+export async function checkIntentWithAI(input: string, agentType: 'psychological' | 'aiTools' | 'career'): Promise<{ isRelevant: boolean; score: number; reason: string }> {
+  // Career agent doesn't need intent check - always relevant
+  if (agentType === 'career') {
+    return {
+      isRelevant: true,
+      score: 1,
+      reason: 'Career assessment is always relevant',
+    };
+  }
+
   const systemPrompt = agentType === 'psychological'
     ? `你是一个意图识别助手。判断用户输入是否与心理疏导相关。
 

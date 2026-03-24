@@ -1,0 +1,9 @@
+ rsync -avz --exclude 'node_modules' --exclude '.next' --exclude 'dist' --exclude 'data' \
+    /Users/whmjack/Downloads/claude-code-code/multi-agent-app root@120.53.84.161:/root/wjy
+
+
+cp .env.example .env
+
+docker-compose down
+
+docker-compose up -d --build
