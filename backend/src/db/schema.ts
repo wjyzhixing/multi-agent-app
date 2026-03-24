@@ -2,6 +2,18 @@ import db from './index';
 
 // Create tables
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
     agent_type TEXT NOT NULL,
@@ -10,7 +22,9 @@ db.exec(`
     intent_score REAL DEFAULT 0,
     is_blocked INTEGER DEFAULT 0,
     session_id TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    user_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
 

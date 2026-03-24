@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import { AuthProvider } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`${inter.className} bg-neutral-50`}>
-        <Sidebar />
-        <main className="min-h-screen lg:ml-60">
-          {children}
-        </main>
+        <AuthProvider>
+          <Sidebar />
+          <main className="min-h-screen lg:ml-60 [&:has(>_.no-sidebar)]:ml-0">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );

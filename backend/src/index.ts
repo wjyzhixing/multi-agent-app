@@ -9,6 +9,7 @@ import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import cors from '@koa/cors';
 import chatRouter from './routes/chat';
+import authRouter from './routes/auth';
 
 const app = new Koa();
 const PORT = Number(process.env.PORT) || 3001;
@@ -23,6 +24,8 @@ app.use(json());
 app.use(bodyParser());
 
 // Routes
+app.use(authRouter.routes());
+app.use(authRouter.allowedMethods());
 app.use(chatRouter.routes());
 app.use(chatRouter.allowedMethods());
 
@@ -39,6 +42,9 @@ app.use(async (ctx: DefaultContext, next: () => Promise<void>) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Available endpoints:`);
+  console.log(`   POST /auth/register - 用户注册`);
+  console.log(`   POST /auth/login - 用户登录`);
+  console.log(`   GET  /auth/me - 获取当前用户`);
   console.log(`   POST /chat/psychological - 心理疏导智能体`);
   console.log(`   POST /chat/aiTools - AI 工具推荐智能体`);
   console.log(`   POST /chat/career - 职业测评智能体`);

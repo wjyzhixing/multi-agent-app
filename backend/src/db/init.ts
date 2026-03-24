@@ -1,12 +1,64 @@
 import db from './index';
+import bcrypt from 'bcryptjs';
 
-export function initConversation(agentType: string, userInput: string, agentResponse: string, intentScore: number, isBlocked: boolean, sessionId?: string): string {
+// User functions
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+  created_at: string;
+  updated_at: string;
+}
+
+export function createUser(username: string, email: string, password: string, role: 'user' | 'admin' = 'user'): string {
+  const id = crypto.randomUUID();
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const stmt = db.prepare(`
+    INSERT INTO users (id, username, email, password, role)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  stmt.run(id, username, email, hashedPassword, role);
+  return id;
+}
+
+export function getUserById(id: string): User | null {
+  const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  return stmt.get(id) as User | null;
+}
+
+export function getUserByUsername(username: string): User | null {
+  const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
+  return stmt.get(username) as User | null;
+}
+
+export function getUserByEmail(email: string): User | null {
+  const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+  return stmt.get(email) as User | null;
+}
+
+export function verifyPassword(user: User, password: string): boolean {
+  return bcrypt.compareSync(password, user.password);
+}
+
+export function updateUserPassword(id: string, newPassword: string): void {
+  const hashedPassword = bcrypt.hashSync(newPassword, 10);
+  const stmt = db.prepare(`
+    UPDATE users SET password = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `);
+  stmt.run(hashedPassword, id);
+}
+
+// Conversation functions
+export function initConversation(agentType: string, userInput: string, agentResponse: string, intentScore: number, isBlocked: boolean, sessionId?: string, userId?: string): string {
   const id = crypto.randomUUID();
   const stmt = db.prepare(`
-    INSERT INTO conversations (id, agent_type, user_input, agent_response, intent_score, is_blocked, session_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO conversations (id, agent_type, user_input, agent_response, intent_score, is_blocked, session_id, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  stmt.run(id, agentType, userInput, agentResponse, intentScore, isBlocked ? 1 : 0, sessionId || null);
+  stmt.run(id, agentType, userInput, agentResponse, intentScore, isBlocked ? 1 : 0, sessionId || null, userId || null);
   return id;
 }
 
@@ -18,16 +70,26 @@ export function saveRecommendation(id: string, conversationId: string, recType: 
   stmt.run(id, conversationId, recType, content, metadata || null);
 }
 
-export function getConversationHistory(agentType?: string, limit: number = 20): any[] {
+export function getConversationHistory(agentType?: string, limit: number = 20, userId?: string): any[] {
   let query = `
-    SELECT id, agent_type, user_input, agent_response, intent_score, is_blocked, session_id, created_at
+    SELECT id, agent_type, user_input, agent_response, intent_score, is_blocked, session_id, user_id, created_at
     FROM conversations
   `;
   const params: any[] = [];
+  const conditions: string[] = [];
 
   if (agentType) {
-    query += ' WHERE agent_type = ?';
+    conditions.push('agent_type = ?');
     params.push(agentType);
+  }
+
+  if (userId) {
+    conditions.push('user_id = ?');
+    params.push(userId);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
   }
 
   query += ' ORDER BY created_at DESC LIMIT ?';

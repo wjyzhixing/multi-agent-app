@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 
 const menuItems = [
   { path: '/agents/psychological', label: '心理疏导' },
@@ -12,7 +13,19 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  // Don't show sidebar on login/register pages
+  if (pathname === '/login' || pathname === '/register') {
+    return null;
+  }
 
   return (
     <>
@@ -76,6 +89,31 @@ export default function Sidebar() {
             })}
           </ul>
         </nav>
+
+        {/* User section */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-100">
+          {loading ? null : user ? (
+            <div className="space-y-2">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium text-neutral-800 truncate">{user.username}</p>
+                <p className="text-xs text-neutral-400 truncate">{user.email}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 text-sm text-neutral-600 hover:text-neutral-800 hover:bg-neutral-50 rounded-lg transition-colors text-left"
+              >
+                退出登录
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="block w-full px-4 py-2.5 bg-neutral-900 text-white text-sm text-center rounded-lg hover:bg-neutral-800 transition-colors"
+            >
+              登录
+            </Link>
+          )}
+        </div>
       </aside>
     </>
   );

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { streamChat, getDocument, getHistory, Message } from '@/lib/api';
+import { streamChat, getDocument, Message } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import MarkdownEditor from '@/components/MarkdownEditor';
 
 function generateId(): string {
@@ -21,6 +22,7 @@ export default function CareerPage() {
   const [showDocument, setShowDocument] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user, token } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -30,16 +32,31 @@ export default function CareerPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Load history on mount
+  // Load history on mount - only if logged in
   useEffect(() => {
     const loadHistory = async () => {
       setLoadingHistory(true);
+
+      // If not logged in, just show welcome message
+      if (!token) {
+        setMessages([{
+          id: generateId(),
+          role: 'assistant',
+          content: '你好！我是职业测评助手。我会通过一些问题来了解你，然后为你生成一份专属的职业测评报告。\n\n让我们开始吧！请告诉我你的名字或者你想从哪个方面开始聊？',
+          timestamp: new Date()
+        }]);
+        setLoadingHistory(false);
+        return;
+      }
+
       try {
         const API_BASE = process.env.NODE_ENV === 'development'
           ? 'http://localhost:3001'
           : '/api';
 
-        const response = await fetch(`${API_BASE}/history/career?limit=50`);
+        const response = await fetch(`${API_BASE}/history/career?limit=50`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
@@ -105,7 +122,7 @@ export default function CareerPage() {
     };
 
     loadHistory();
-  }, []);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +186,8 @@ export default function CareerPage() {
               : msg
           ));
           setIsLoading(false);
-        }
+        },
+        token || undefined
       );
     } catch (err) {
       setIsLoading(false);

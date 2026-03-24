@@ -43,20 +43,81 @@ export interface Document {
   updated_at: string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: 'user' | 'admin';
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data?: {
+    user: User;
+    token: string;
+  };
+  error?: string;
+}
+
+// Auth API
+export async function register(username: string, email: string, password: string): Promise<AuthResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: '注册失败，请检查网络' };
+  }
+}
+
+export async function login(username: string, password: string): Promise<AuthResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: '登录失败，请检查网络' };
+  }
+}
+
+export async function getCurrentUser(token: string): Promise<{ success: boolean; data?: User; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: '获取用户信息失败' };
+  }
+}
+
 // Streaming chat function
 export async function streamChat(
   agentType: 'psychological' | 'aiTools' | 'career',
   input: string,
   onChunk: (text: string) => void,
   onComplete: (fullText: string, sessionId?: string, documentReady?: boolean) => void,
-  onError: (error: string) => void
+  onError: (error: string) => void,
+  token?: string
 ): Promise<void> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/chat/${agentType}/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ input }),
     });
 
@@ -152,12 +213,17 @@ export async function updateDocument(sessionId: string, content: string): Promis
 }
 
 // History API
-export async function getHistory(agentType?: string, limit: number = 20): Promise<Message[]> {
+export async function getHistory(agentType?: string, limit: number = 20, token?: string): Promise<Message[]> {
   try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const url = agentType
       ? `${API_BASE_URL}/history/${agentType}?limit=${limit}`
       : `${API_BASE_URL}/history?limit=${limit}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { headers });
     const data = await response.json();
 
     if (data.success && Array.isArray(data.data)) {

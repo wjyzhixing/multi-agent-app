@@ -80,6 +80,7 @@ export class CareerAgent extends BaseAgent {
   async processStream(input: string, context?: AgentContext): Promise<PassThrough> {
     const passThrough = new PassThrough();
     const sessionId = context?.conversationId;
+    const userId = context?.userId;
 
     (async () => {
       try {
@@ -91,11 +92,11 @@ export class CareerAgent extends BaseAgent {
         }
 
         if (!session) {
-          session = getLatestCareerSession(context?.userId);
+          session = getLatestCareerSession(userId);
         }
 
         if (!session) {
-          const newSessionId = createCareerSession(context?.userId);
+          const newSessionId = createCareerSession(userId);
           session = getCareerSession(newSessionId);
         }
 
@@ -164,8 +165,8 @@ export class CareerAgent extends BaseAgent {
           const reportIntro = '分析完成！以下是你的职业测评报告：\n\n';
           const fullReport = reportIntro + report;
 
-          // Save conversation history with session_id
-          initConversation('career', input, fullReport, 1, false, currentSessionId);
+          // Save conversation history with session_id and user_id
+          initConversation('career', input, fullReport, 1, false, currentSessionId, userId);
 
           // Send report
           passThrough.write(`data: ${JSON.stringify({
@@ -202,8 +203,8 @@ export class CareerAgent extends BaseAgent {
 
         const fullResponse = progress + response + '\n\n' + nextQuestion;
 
-        // Save conversation history with session_id
-        initConversation('career', input, fullResponse, 1, false, currentSessionId);
+        // Save conversation history with session_id and user_id
+        initConversation('career', input, fullResponse, 1, false, currentSessionId, userId);
 
         passThrough.write(`data: ${JSON.stringify({
           text: fullResponse,

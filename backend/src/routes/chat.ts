@@ -5,6 +5,7 @@ import { CareerAgent } from '../agents/career';
 import { getBlockMessage } from '../middleware/intent';
 import { checkIntentWithAI } from '../lib/ai-client';
 import { initConversation, getConversationHistory, getDocument, updateDocument } from '../db/init';
+import { optionalAuthMiddleware, authMiddleware } from '../middleware/auth';
 import { ParameterizedContext } from 'koa';
 const router = new Router({ prefix: '' });
 
@@ -32,10 +33,11 @@ interface ChatResponse {
 }
 
 // Streaming chat endpoint
-router.post('/chat/:agentType/stream', async (ctx: ParameterizedContext) => {
+router.post('/chat/:agentType/stream', optionalAuthMiddleware, async (ctx: ParameterizedContext) => {
   const { agentType } = ctx.params;
   const body = ctx.request.body as ChatRequest;
-  const { input, userId } = body;
+  const { input } = body;
+  const userId = ctx.user?.userId;
 
   // Validate agent type
   if (!agents[agentType as keyof typeof agents]) {
@@ -140,11 +142,12 @@ router.post('/chat/:agentType', async (ctx: ParameterizedContext) => {
 });
 
 // Get conversation history
-router.get('/history/:agentType', async (ctx: ParameterizedContext) => {
+router.get('/history/:agentType', optionalAuthMiddleware, async (ctx: ParameterizedContext) => {
   const { agentType } = ctx.params;
   const limit = parseInt(ctx.query.limit as string) || 20;
+  const userId = ctx.user?.userId;
 
-  const history = getConversationHistory(agentType || undefined, limit);
+  const history = getConversationHistory(agentType || undefined, limit, userId);
 
   ctx.body = {
     success: true,
@@ -152,9 +155,11 @@ router.get('/history/:agentType', async (ctx: ParameterizedContext) => {
   };
 });
 
-router.get('/history', async (ctx: ParameterizedContext) => {
+router.get('/history', optionalAuthMiddleware, async (ctx: ParameterizedContext) => {
   const limit = parseInt(ctx.query.limit as string) || 20;
-  const history = getConversationHistory(undefined, limit);
+  const userId = ctx.user?.userId;
+
+  const history = getConversationHistory(undefined, limit, userId);
 
   ctx.body = {
     success: true,
