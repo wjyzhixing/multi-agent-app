@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// 本地开发用 /api，生产环境由 Nginx 转发
+const API_BASE_URL = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:3001'
+  : '/api';
 
 export interface ChatRequest {
   input: string;

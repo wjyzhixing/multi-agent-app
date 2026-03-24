@@ -90,9 +90,9 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-neutral-50 lg:ml-60">
-      <div className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-        <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="flex flex-col h-screen bg-neutral-50">
+      <div className="flex-1 overflow-y-auto pt-14 lg:pt-8">
+        <div className="max-w-2xl mx-auto px-6 py-6">
           {messages.length === 0 && (
             <div className="text-center py-16">
               <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -134,7 +134,7 @@ export default function ChatInterface({
       </div>
 
       <div className="border-t border-neutral-100 bg-white">
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-3">
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-6 py-3">
           <div className="flex gap-2">
             <input
               type="text"
