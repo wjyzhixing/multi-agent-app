@@ -99,6 +99,7 @@ export default function MarkdownEditor({
   const [content, setContent] = useState(initialContent);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setContent(initialContent);
@@ -120,18 +121,64 @@ export default function MarkdownEditor({
     }
   }, [sessionId, content, isSaving, onSave]);
 
+  const handleDownloadMD = () => {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '职业测评报告.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = async () => {
+    if (!contentRef.current) return;
+
+    // @ts-ignore
+    const html2pdf = (await import('html2pdf.js')).default;
+
+    const element = contentRef.current.cloneNode(true) as HTMLElement;
+
+    // Remove buttons from cloned element
+    element.querySelectorAll('button').forEach(btn => btn.remove());
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: '职业测评报告.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   if (readOnly || !isEditing) {
     return (
       <div className="relative">
         {!readOnly && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="absolute top-2 right-2 px-3 py-1.5 bg-neutral-900 text-white text-xs rounded-full hover:bg-neutral-800 transition-colors z-10"
-          >
-            编辑
-          </button>
+          <div className="absolute top-2 right-2 flex gap-2 z-10">
+            <button
+              onClick={handleDownloadMD}
+              className="px-3 py-1.5 bg-neutral-100 text-neutral-700 text-xs rounded-full hover:bg-neutral-200 transition-colors"
+            >
+              下载 MD
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="px-3 py-1.5 bg-neutral-100 text-neutral-700 text-xs rounded-full hover:bg-neutral-200 transition-colors"
+            >
+              导出 PDF
+            </button>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-3 py-1.5 bg-neutral-900 text-white text-xs rounded-full hover:bg-neutral-800 transition-colors"
+            >
+              编辑
+            </button>
+          </div>
         )}
-        <div className="markdown-content prose prose-slate max-w-none
+        <div ref={contentRef} className="markdown-content prose prose-slate max-w-none
           prose-headings:text-neutral-800 prose-headings:font-semibold
           prose-h1:text-2xl prose-h1:border-b prose-h1:border-neutral-200 prose-h1:pb-3 prose-h1:mb-6
           prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4

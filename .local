@@ -7,3 +7,22 @@ cp .env.example .env
 docker-compose down
 
 docker-compose up -d --build
+
+
+# 进入项目目录
+cd /path/to/multi-agent-app
+
+# 停止并删除容器、网络、卷
+docker-compose down -v
+
+# 删除镜像
+docker rmi multi-agent-app-frontend multi-agent-app-backend 2>/dev/null || true
+
+# 删除本地数据库文件（如果有）
+rm -f ./backend/data/agents.db
+
+# 重新构建并启动
+docker-compose up -d --build
+
+# 查看日志确认启动成功
+docker-compose logs -f
