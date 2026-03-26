@@ -98,14 +98,14 @@ const SessionList = forwardRef<SessionListRef, SessionListProps>(({
     return (
       <>
         {token && (
-          <div className="hidden lg:flex flex-col h-full bg-white border-r border-neutral-200 w-12 flex-shrink-0 items-center py-4">
+          <div className="hidden lg:flex flex-col h-full bg-white border-r border-neutral-200 w-12 flex-shrink-0 items-center relative">
             <button
               onClick={() => setIsCollapsed(false)}
-              className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg"
+              className="absolute -right-3 top-20 w-6 h-6 bg-white border border-neutral-200 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 shadow-sm z-10"
               title="展开历史记录"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              <svg className="w-3.5 h-3.5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
           </div>
@@ -118,9 +118,20 @@ const SessionList = forwardRef<SessionListRef, SessionListProps>(({
     <>
       {/* Desktop: collapsible sidebar */}
       {token && (
-        <div className="hidden lg:flex flex-col h-full bg-white border-r border-neutral-200 w-56 flex-shrink-0">
-          {/* Header with collapse toggle */}
-          <div className="flex items-center justify-between p-3 border-b border-neutral-100">
+        <div className="hidden lg:flex flex-col h-full bg-white border-r border-neutral-200 w-56 flex-shrink-0 relative">
+          {/* Collapse toggle button - same style as main sidebar */}
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="absolute -right-3 top-20 w-6 h-6 bg-white border border-neutral-200 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 shadow-sm z-10"
+            title="收起"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Header */}
+          <div className="p-3 border-b border-neutral-100">
             <button
               onClick={handleNewSession}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-colors"
@@ -129,15 +140,6 @@ const SessionList = forwardRef<SessionListRef, SessionListProps>(({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               新建
-            </button>
-            <button
-              onClick={() => setIsCollapsed(true)}
-              className="p-1.5 text-neutral-400 hover:text-neutral-600 rounded hover:bg-neutral-100"
-              title="收起"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
             </button>
           </div>
 
