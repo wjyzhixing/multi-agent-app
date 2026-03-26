@@ -451,3 +451,197 @@ export async function savePageVersion(
     return null;
   }
 }
+
+// Career job extension types
+export interface CareerJobExtension {
+  id: string;
+  jobTitle: string;
+  content: string;
+  conversations: Array<{ user: string; assistant: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Career job extension API
+export async function getCareerJobExtensions(
+  sessionId: string,
+  token?: string
+): Promise<CareerJobExtension[]> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/career-extensions/list/${sessionId}`, { headers });
+    const data = await response.json();
+    return data.success ? data.data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getCareerJobExtension(
+  sessionId: string,
+  jobTitle: string,
+  token?: string
+): Promise<CareerJobExtension | null> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/career-extensions/item/${sessionId}?jobTitle=${encodeURIComponent(jobTitle)}`, { headers });
+    const data = await response.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function saveCareerJobExtension(
+  sessionId: string,
+  jobTitle: string,
+  content: string,
+  conversations?: Array<{ user: string; assistant: string }>,
+  token?: string
+): Promise<boolean> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/career-extensions/save`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ sessionId, jobTitle, content, conversations }),
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteCareerJobExtension(
+  sessionId: string,
+  jobTitle: string,
+  token?: string
+): Promise<boolean> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/career-extensions/remove?sessionId=${sessionId}&jobTitle=${encodeURIComponent(jobTitle)}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Stream chat for career job extension
+export async function streamCareerJobChat(
+  sessionId: string,
+  jobTitle: string,
+  message: string,
+  conversations: Array<{ user: string; assistant: string }>,
+  currentContent: string,
+  onChunk: (text: string) => void,
+  onComplete: (fullText: string) => void,
+  onError: (error: string) => void,
+  token?: string
+): Promise<void> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/career-extensions/generate`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ sessionId, jobTitle, message, conversations, currentContent }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const json = JSON.parse(data);
+
+            if (json.error) {
+              onError(json.error);
+              return;
+            }
+
+            if (json.text) {
+              fullText += json.text;
+              onChunk(json.text);
+            }
+
+            if (json.done && json.fullText) {
+              fullText = json.fullText;
+              onComplete(fullText);
+              return;
+            }
+          } catch (e) {
+            // Skip invalid JSON
+          }
+        }
+      }
+    }
+
+    onComplete(fullText);
+  } catch (error: any) {
+    onError(error.message || '请求失败');
+  }
+}
+
+// Patch career job extension content
+export async function patchCareerJobExtension(
+  sessionId: string,
+  jobTitle: string,
+  section: string,
+  newContent: string,
+  currentContent: string,
+  onChunk: (text: string) => void,
+  onComplete: (fullText: string) => void,
+  onError: (error: string) => void,
+  token?: string
+): Promise<void> {
+  // 暂时不支持，直接返回错误
+  onError('暂不支持局部修改');
+}

@@ -90,4 +90,19 @@ db.exec(`
   )
 `);
 
+// Career job extensions table - 存储职业扩展详情
+db.exec(`
+  CREATE TABLE IF NOT EXISTS career_job_extensions (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    job_title TEXT NOT NULL,
+    content TEXT DEFAULT '',
+    conversations TEXT DEFAULT '[]',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES career_sessions(id),
+    UNIQUE(session_id, job_title)
+  )
+`);
+
 console.log('Database initialized successfully!');

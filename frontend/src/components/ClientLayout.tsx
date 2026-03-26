@@ -39,10 +39,13 @@ export default function ClientLayout({
         />
       )}
       <main
-        className="flex-1 min-h-screen transition-all duration-300 overflow-hidden"
-        style={{
-          marginLeft: showSidebar ? (isSidebarCollapsed ? '64px' : '240px') : '0',
-        }}
+        className={`flex-1 min-h-screen transition-all duration-300 overflow-hidden ${
+          showSidebar
+            ? isSidebarCollapsed
+              ? 'lg:ml-16'
+              : 'lg:ml-60'
+            : ''
+        }`}
       >
         {children}
       </main>

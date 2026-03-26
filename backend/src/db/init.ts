@@ -345,7 +345,71 @@ export function deleteCareerSession(sessionId: string): void {
   const deleteConversations = db.prepare('DELETE FROM conversations WHERE session_id = ?');
   deleteConversations.run(sessionId);
 
+  // Delete job extensions
+  const deleteExtensions = db.prepare('DELETE FROM career_job_extensions WHERE session_id = ?');
+  deleteExtensions.run(sessionId);
+
   // Delete session
   const deleteSession = db.prepare('DELETE FROM career_sessions WHERE id = ?');
   deleteSession.run(sessionId);
+}
+
+// Career job extension functions
+export interface CareerJobExtension {
+  id: string;
+  session_id: string;
+  job_title: string;
+  content: string;
+  conversations: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function createCareerJobExtension(sessionId: string, jobTitle: string, content: string = ''): string {
+  const id = crypto.randomUUID();
+  const stmt = db.prepare(`
+    INSERT INTO career_job_extensions (id, session_id, job_title, content, conversations)
+    VALUES (?, ?, ?, ?, '[]')
+  `);
+  stmt.run(id, sessionId, jobTitle, content);
+  return id;
+}
+
+export function getCareerJobExtension(sessionId: string, jobTitle: string): CareerJobExtension | null {
+  const stmt = db.prepare('SELECT * FROM career_job_extensions WHERE session_id = ? AND job_title = ?');
+  return stmt.get(sessionId, jobTitle) as CareerJobExtension | null;
+}
+
+export function getCareerJobExtensions(sessionId: string): CareerJobExtension[] {
+  const stmt = db.prepare('SELECT * FROM career_job_extensions WHERE session_id = ? ORDER BY created_at ASC');
+  return stmt.all(sessionId) as CareerJobExtension[];
+}
+
+export function updateCareerJobExtension(sessionId: string, jobTitle: string, content: string, conversations?: string): void {
+  const fields = ['content = ?', "updated_at = datetime('now')"];
+  const values: any[] = [content];
+
+  if (conversations !== undefined) {
+    fields.push('conversations = ?');
+    values.push(conversations);
+  }
+
+  values.push(sessionId, jobTitle);
+
+  const stmt = db.prepare(`UPDATE career_job_extensions SET ${fields.join(', ')} WHERE session_id = ? AND job_title = ?`);
+  stmt.run(...values);
+}
+
+export function upsertCareerJobExtension(sessionId: string, jobTitle: string, content: string, conversations?: string): string {
+  const existing = getCareerJobExtension(sessionId, jobTitle);
+  if (existing) {
+    updateCareerJobExtension(sessionId, jobTitle, content, conversations);
+    return existing.id;
+  }
+  return createCareerJobExtension(sessionId, jobTitle, content);
+}
+
+export function deleteCareerJobExtension(sessionId: string, jobTitle: string): void {
+  const stmt = db.prepare('DELETE FROM career_job_extensions WHERE session_id = ? AND job_title = ?');
+  stmt.run(sessionId, jobTitle);
 }

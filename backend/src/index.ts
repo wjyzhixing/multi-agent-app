@@ -11,6 +11,7 @@ import cors from '@koa/cors';
 import chatRouter from './routes/chat';
 import authRouter from './routes/auth';
 import sessionsRouter from './routes/sessions';
+import careerExtensionsRouter from './routes/career-extensions';
 
 const app = new Koa();
 const PORT = Number(process.env.PORT) || 3001;
@@ -29,6 +30,8 @@ app.use(authRouter.routes());
 app.use(authRouter.allowedMethods());
 app.use(sessionsRouter.routes());
 app.use(sessionsRouter.allowedMethods());
+app.use(careerExtensionsRouter.routes());
+app.use(careerExtensionsRouter.allowedMethods());
 app.use(chatRouter.routes());
 app.use(chatRouter.allowedMethods());
 

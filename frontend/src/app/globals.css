@@ -23,3 +23,23 @@ body {
 .mermaid-container .pieTitleText {
   fill: #171717 !important;
 }
+
+/* 3D Tech Animations */
+@keyframes spin-slow {
+  from {
+    transform: rotateX(70deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(70deg) rotateY(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 25s linear infinite;
+}
+
+/* Input focus styles for login */
+input:focus {
+  border-color: rgba(0, 120, 212, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.1);
+}

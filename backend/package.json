@@ -20,6 +20,8 @@
     "koa": "^2.15.3",
     "koa-bodyparser": "^4.4.1",
     "koa-json": "^2.0.2",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "uuid": "^11.0.5"
   },
   "devDependencies": {
@@ -27,10 +29,10 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/koa": "^2.15.0",
-    "@types/koa-bodyparser": "^4.3.12",
-    "@types/koa-json": "^2.0.23",
     "@types/koa__cors": "^5.0.0",
     "@types/koa__router": "^12.0.4",
+    "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa-json": "^2.0.23",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

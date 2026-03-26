@@ -270,16 +270,27 @@ export default function PageBuilderPage() {
         <div className={`flex-1 flex flex-col ${showPreview ? 'lg:w-1/2 lg:max-w-[600px]' : ''} ${showPreview ? 'lg:border-r lg:border-neutral-200' : ''}`}>
           {/* Mobile header with session toggle */}
           {token && (
-            <div className="lg:hidden flex items-center gap-2 px-4 pt-14 pb-2 bg-white border-b border-neutral-100">
+            <div className="lg:hidden flex items-center justify-between px-4 pt-14 pb-3 bg-white border-b border-neutral-100">
               <button
                 onClick={() => setShowSessionList(true)}
-                className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg"
+                className="flex items-center gap-2 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
+                <span className="text-sm text-neutral-700 font-medium">历史记录</span>
               </button>
-              <span className="text-sm text-neutral-500">历史记录</span>
+              {showPreview && (
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="flex items-center gap-2 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  <span className="text-sm font-medium">查看代码</span>
+                </button>
+              )}
             </div>
           )}
           {!token && <div className="lg:hidden h-14" />}

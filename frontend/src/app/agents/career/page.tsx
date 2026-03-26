@@ -5,6 +5,7 @@ import { streamChat, getDocument, Message, getSessionConversations, createSessio
 import { useAuth } from '@/lib/auth';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import SessionList, { SessionListRef } from '@/components/SessionList';
+import CareerJobDrawer from '@/components/CareerJobDrawer';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -24,6 +25,8 @@ export default function CareerPage() {
   const [documentContent, setDocumentContent] = useState<string>('');
   const [showDocument, setShowDocument] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionListRef = useRef<SessionListRef>(null);
   const { token } = useAuth();
@@ -84,6 +87,12 @@ export default function CareerPage() {
   // Refresh session list
   const refreshSessionList = useCallback(() => {
     sessionListRef.current?.refresh();
+  }, []);
+
+  // 打开职业扩展抽屉
+  const handleJobExtend = useCallback((jobTitle: string) => {
+    setSelectedJob(jobTitle);
+    setDrawerOpen(true);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,16 +199,27 @@ export default function CareerPage() {
         <div className={`flex-1 flex flex-col ${showDocument ? 'lg:w-1/2 lg:max-w-[600px]' : ''} ${showDocument ? 'lg:border-r lg:border-neutral-200' : ''}`}>
           {/* Mobile header with session toggle */}
           {token && (
-            <div className="lg:hidden flex items-center gap-2 px-4 pt-14 pb-2 bg-white border-b border-neutral-100">
+            <div className="lg:hidden flex items-center justify-between px-4 pt-14 pb-3 bg-white border-b border-neutral-100">
               <button
                 onClick={() => setShowSessionList(true)}
-                className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg"
+                className="flex items-center gap-2 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
+                <span className="text-sm text-neutral-700 font-medium">历史记录</span>
               </button>
-              <span className="text-sm text-neutral-500">历史记录</span>
+              {documentContent && (
+                <button
+                  onClick={() => setShowDocument(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm font-medium">查看报告</span>
+                </button>
+              )}
             </div>
           )}
           {!token && <div className="lg:hidden h-14" />}
@@ -294,6 +314,7 @@ export default function CareerPage() {
                     content={documentContent}
                     sessionId={sessionId}
                     onSave={(content) => setDocumentContent(content)}
+                    onJobExtend={handleJobExtend}
                   />
                 </div>
               </div>
@@ -301,16 +322,19 @@ export default function CareerPage() {
 
             <button
               onClick={() => setShowDocument(false)}
-              className="lg:hidden fixed bottom-20 right-6 px-4 py-2 bg-neutral-900 text-white text-sm rounded-full shadow-lg"
+              className="lg:hidden fixed bottom-6 right-6 px-5 py-2.5 bg-neutral-900 text-white text-sm rounded-full shadow-lg flex items-center gap-2 hover:bg-neutral-800 transition-colors"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
               返回对话
             </button>
           </div>
         )}
 
-        {/* Show document button when document is ready */}
+        {/* Show document button when document is ready - only on desktop */}
         {documentContent && !showDocument && (
-          <div className="fixed bottom-[76px] right-6 lg:bottom-3 z-40">
+          <div className="hidden lg:block fixed bottom-3 right-6 z-40">
             <button
               onClick={() => setShowDocument(true)}
               className="px-5 py-2.5 bg-neutral-900 text-white text-sm rounded-full shadow-lg flex items-center gap-2 hover:bg-neutral-800 transition-colors"
@@ -323,6 +347,16 @@ export default function CareerPage() {
           </div>
         )}
       </div>
+
+      {/* 职业扩展抽屉 */}
+      <CareerJobDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sessionId={sessionId || ''}
+        jobTitle={selectedJob}
+        reportContent={documentContent}
+        token={token || undefined}
+      />
     </div>
   );
 }

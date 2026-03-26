@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 
 interface MarkdownEditorProps {
@@ -9,6 +11,7 @@ interface MarkdownEditorProps {
   sessionId?: string;
   onSave?: (content: string) => void;
   readOnly?: boolean;
+  onJobExtend?: (jobTitle: string) => void;
 }
 
 // Initialize mermaid with colorful theme
@@ -94,7 +97,8 @@ export default function MarkdownEditor({
   content: initialContent,
   sessionId,
   onSave,
-  readOnly = false
+  readOnly = false,
+  onJobExtend
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialContent);
   const [isEditing, setIsEditing] = useState(false);
@@ -183,6 +187,7 @@ export default function MarkdownEditor({
           prose-h1:text-2xl prose-h1:border-b prose-h1:border-neutral-200 prose-h1:pb-3 prose-h1:mb-6
           prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
           prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+          prose-h4:text-base prose-h4:mt-5 prose-h4:mb-3
           prose-p:text-neutral-600 prose-p:leading-relaxed prose-p:my-4
           prose-strong:text-neutral-800 prose-strong:font-semibold
           prose-li:text-neutral-600 prose-li:my-1
@@ -192,6 +197,8 @@ export default function MarkdownEditor({
           prose-pre:bg-slate-100 prose-pre:text-neutral-900 prose-pre:rounded-lg prose-pre:my-6"
         >
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw]}
             components={{
               code: ({ className, children, ...props }) => {
                 const match = /language-mermaid/.exec(className || '');
@@ -210,6 +217,52 @@ export default function MarkdownEditor({
                   {children}
                 </pre>
               ),
+              h4: ({ children }) => {
+                const text = String(children);
+                // 职业标题格式: "1. 技术产品经理" 或 "技术产品经理"
+                const jobMatch = text.match(/^\d+\.\s*(.+)$/);
+                const jobTitle = jobMatch ? jobMatch[1].trim() : text;
+
+                // 检测是否是职业标题
+                const jobPatterns = [
+                  /工程师|设计师|经理|专员|顾问|分析师|开发|运营|产品|总监|主管|助理|专家|架构师|负责人|作家|布道师|创作者/,
+                ];
+
+                const isJobTitle = jobPatterns.some(pattern => pattern.test(jobTitle));
+
+                if (isJobTitle && onJobExtend) {
+                  return (
+                    <h4 className="text-base font-semibold text-neutral-800 mt-5 mb-3 flex items-center gap-2 group">
+                      {children}
+                      <button
+                        onClick={() => onJobExtend(jobTitle)}
+                        className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-neutral-900 text-white rounded-full hover:bg-neutral-700 transition-all flex items-center gap-1 flex-shrink-0"
+                        title="查看详细扩展"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        扩展
+                      </button>
+                    </h4>
+                  );
+                }
+                return <h4 className="text-base font-semibold text-neutral-800 mt-5 mb-3">{children}</h4>;
+              },
+              h3: ({ children }) => {
+                const text = String(children);
+                // 检测是否是职业推荐部分
+                const isJobSection = text.includes('职业方向') || text.includes('推荐职业') || text.includes('适合职业');
+
+                if (isJobSection && onJobExtend) {
+                  return (
+                    <h3 className="text-lg font-semibold text-neutral-800 mt-6 mb-3 flex items-center gap-2">
+                      {children}
+                    </h3>
+                  );
+                }
+                return <h3 className="text-lg font-semibold text-neutral-800 mt-6 mb-3">{children}</h3>;
+              },
             }}
           >
             {content}
