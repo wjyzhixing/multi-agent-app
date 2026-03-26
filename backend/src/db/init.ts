@@ -202,3 +202,150 @@ export function updateDocument(sessionId: string, content: string): void {
   `);
   stmt.run(content, sessionId);
 }
+
+// Page session functions
+export interface PageSession {
+  id: string;
+  user_id: string | null;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function createPageSession(userId?: string, title?: string): string {
+  const id = crypto.randomUUID();
+  const stmt = db.prepare(`
+    INSERT INTO page_sessions (id, user_id, title)
+    VALUES (?, ?, ?)
+  `);
+  stmt.run(id, userId || null, title || null);
+  return id;
+}
+
+export function getPageSession(sessionId: string): PageSession | null {
+  const stmt = db.prepare('SELECT * FROM page_sessions WHERE id = ?');
+  return stmt.get(sessionId) as PageSession | null;
+}
+
+export function getPageSessions(userId?: string): PageSession[] {
+  let query = 'SELECT * FROM page_sessions';
+  const params: any[] = [];
+
+  if (userId) {
+    query += ' WHERE user_id = ?';
+    params.push(userId);
+  }
+
+  query += ' ORDER BY updated_at DESC';
+
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as PageSession[];
+}
+
+export function updatePageSession(sessionId: string, title: string): void {
+  const stmt = db.prepare(`
+    UPDATE page_sessions SET title = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `);
+  stmt.run(title, sessionId);
+}
+
+export function deletePageSession(sessionId: string): void {
+  // Delete versions first
+  const deleteVersions = db.prepare('DELETE FROM page_versions WHERE session_id = ?');
+  deleteVersions.run(sessionId);
+
+  // Delete conversations
+  const deleteConversations = db.prepare('DELETE FROM conversations WHERE session_id = ?');
+  deleteConversations.run(sessionId);
+
+  // Delete session
+  const deleteSession = db.prepare('DELETE FROM page_sessions WHERE id = ?');
+  deleteSession.run(sessionId);
+}
+
+// Page version functions
+export interface PageVersion {
+  id: string;
+  session_id: string;
+  version: number;
+  code: string;
+  description: string | null;
+  created_at: string;
+}
+
+export function createPageVersion(sessionId: string, code: string, description?: string): number {
+  // Get current max version
+  const stmt = db.prepare('SELECT MAX(version) as max_version FROM page_versions WHERE session_id = ?');
+  const result = stmt.get(sessionId) as { max_version: number | null };
+  const nextVersion = (result.max_version || 0) + 1;
+
+  const id = crypto.randomUUID();
+  const insertStmt = db.prepare(`
+    INSERT INTO page_versions (id, session_id, version, code, description)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  insertStmt.run(id, sessionId, nextVersion, code, description || null);
+
+  // Update session updated_at
+  const updateStmt = db.prepare(`UPDATE page_sessions SET updated_at = datetime('now') WHERE id = ?`);
+  updateStmt.run(sessionId);
+
+  return nextVersion;
+}
+
+export function getPageVersions(sessionId: string): PageVersion[] {
+  const stmt = db.prepare('SELECT * FROM page_versions WHERE session_id = ? ORDER BY version DESC');
+  return stmt.all(sessionId) as PageVersion[];
+}
+
+export function getPageVersion(sessionId: string, version: number): PageVersion | null {
+  const stmt = db.prepare('SELECT * FROM page_versions WHERE session_id = ? AND version = ?');
+  return stmt.get(sessionId, version) as PageVersion | null;
+}
+
+export function getLatestPageVersion(sessionId: string): PageVersion | null {
+  const stmt = db.prepare('SELECT * FROM page_versions WHERE session_id = ? ORDER BY version DESC LIMIT 1');
+  return stmt.get(sessionId) as PageVersion | null;
+}
+
+// Session-based conversation functions
+export function getConversationsBySession(sessionId: string): any[] {
+  const stmt = db.prepare(`
+    SELECT id, agent_type, user_input, agent_response, created_at
+    FROM conversations
+    WHERE session_id = ?
+    ORDER BY created_at ASC
+  `);
+  return stmt.all(sessionId) as any[];
+}
+
+// Career session list for session management
+export function getCareerSessions(userId?: string): CareerSession[] {
+  let query = 'SELECT * FROM career_sessions';
+  const params: any[] = [];
+
+  if (userId) {
+    query += ' WHERE user_id = ?';
+    params.push(userId);
+  }
+
+  query += ' ORDER BY updated_at DESC';
+
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as CareerSession[];
+}
+
+export function deleteCareerSession(sessionId: string): void {
+  // Delete document
+  const deleteDoc = db.prepare('DELETE FROM documents WHERE session_id = ?');
+  deleteDoc.run(sessionId);
+
+  // Delete conversations
+  const deleteConversations = db.prepare('DELETE FROM conversations WHERE session_id = ?');
+  deleteConversations.run(sessionId);
+
+  // Delete session
+  const deleteSession = db.prepare('DELETE FROM career_sessions WHERE id = ?');
+  deleteSession.run(sessionId);
+}

@@ -9,7 +9,10 @@ services:
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
       - PORT=3001
     volumes:
-      - backend-data:/app/data
+      # 使用本地目录存储数据（推荐，方便备份）
+      - ./data:/app/data
+      # 或者使用 Docker volume：
+      # - backend-data:/app/data
     restart: unless-stopped
 
   frontend:
@@ -20,5 +23,6 @@ services:
       - backend
     restart: unless-stopped
 
-volumes:
-  backend-data:
+# 如果使用 Docker volume，取消下面的注释
+# volumes:
+#   backend-data:

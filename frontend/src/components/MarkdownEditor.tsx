@@ -157,7 +157,13 @@ export default function MarkdownEditor({
     return (
       <div className="relative">
         {!readOnly && (
-          <div className="absolute top-2 right-2 flex gap-2 z-10">
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-neutral-100">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-3 py-1.5 bg-neutral-900 text-white text-xs rounded-full hover:bg-neutral-800 transition-colors"
+            >
+              编辑
+            </button>
             <button
               onClick={handleDownloadMD}
               className="px-3 py-1.5 bg-neutral-100 text-neutral-700 text-xs rounded-full hover:bg-neutral-200 transition-colors"
@@ -169,12 +175,6 @@ export default function MarkdownEditor({
               className="px-3 py-1.5 bg-neutral-100 text-neutral-700 text-xs rounded-full hover:bg-neutral-200 transition-colors"
             >
               导出 PDF
-            </button>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-3 py-1.5 bg-neutral-900 text-white text-xs rounded-full hover:bg-neutral-800 transition-colors"
-            >
-              编辑
             </button>
           </div>
         )}

@@ -5,9 +5,10 @@ import { CareerAgent } from '../agents/career';
 import { PageBuilderAgent } from '../agents/page-builder';
 import { getBlockMessage } from '../middleware/intent';
 import { checkIntentWithAI } from '../lib/ai-client';
-import { initConversation, getConversationHistory, getDocument, updateDocument } from '../db/init';
+import { initConversation, getConversationHistory, getDocument, updateDocument, updatePageSession, createPageVersion } from '../db/init';
 import { optionalAuthMiddleware, authMiddleware } from '../middleware/auth';
 import { ParameterizedContext } from 'koa';
+import { PassThrough } from 'stream';
 const router = new Router({ prefix: '' });
 
 const agents = {
@@ -22,6 +23,7 @@ interface ChatRequest {
   userId?: string;
   stream?: boolean;
   existingCode?: string;
+  sessionId?: string;
 }
 
 interface ChatResponse {
@@ -79,13 +81,73 @@ router.post('/chat/:agentType/stream', optionalAuthMiddleware, async (ctx: Param
   ctx.set('X-Accel-Buffering', 'no');
 
   // Get stream from agent with existing code context
-  const stream = await agent.processStream(input, {
+  const originalStream = await agent.processStream(input, {
     userId,
     existingCode: body.existingCode
   });
 
+  // Wrap stream to save conversation and version
+  const wrappedStream = new PassThrough();
+  let fullText = '';
+
+  originalStream.on('data', (chunk: Buffer) => {
+    const str = chunk.toString();
+    wrappedStream.write(str);
+
+    // Extract text from SSE data
+    const lines = str.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const json = JSON.parse(line.slice(6));
+          if (json.text) {
+            fullText += json.text;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+  });
+
+  originalStream.on('end', () => {
+    console.log(`[Chat] Stream ended for ${agentType}, sessionId: ${body.sessionId}, fullText length: ${fullText.length}`);
+
+    // Save conversation and version
+    if (body.sessionId && fullText) {
+      initConversation(agentType, input, fullText, 1, false, body.sessionId, userId);
+
+      // For pageBuilder, save version and update title
+      if (agentType === 'pageBuilder') {
+        // Extract HTML code
+        const htmlMatch = fullText.match(/```html\n([\s\S]*?)```/);
+        if (htmlMatch) {
+          const code = htmlMatch[1].trim();
+          console.log(`[PageBuilder] Saving version for session ${body.sessionId}, code length: ${code.length}`);
+          const version = createPageVersion(body.sessionId, code);
+          console.log(`[PageBuilder] Created version ${version}`);
+        } else {
+          console.log(`[PageBuilder] No HTML code found in response for session ${body.sessionId}`);
+          console.log(`[PageBuilder] Response preview: ${fullText.substring(0, 200)}...`);
+        }
+
+        // Extract title from first user message or set default
+        updatePageSession(body.sessionId, input.slice(0, 50));
+      }
+    } else {
+      console.log(`[Chat] Session not saved - sessionId: ${body.sessionId}, fullText length: ${fullText.length}`);
+    }
+
+    wrappedStream.end();
+  });
+
+  originalStream.on('error', (err) => {
+    wrappedStream.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`);
+    wrappedStream.end();
+  });
+
   // Pipe stream to response
-  ctx.body = stream;
+  ctx.body = wrappedStream;
 });
 
 // Non-streaming chat endpoint

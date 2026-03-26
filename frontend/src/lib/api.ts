@@ -106,7 +106,8 @@ export async function streamChat(
   onComplete: (fullText: string, sessionId?: string, documentReady?: boolean) => void,
   onError: (error: string) => void,
   token?: string,
-  existingCode?: string
+  existingCode?: string,
+  sessionId?: string
 ): Promise<void> {
   try {
     const headers: Record<string, string> = {
@@ -119,6 +120,9 @@ export async function streamChat(
     const body: Record<string, any> = { input };
     if (existingCode) {
       body.existingCode = existingCode;
+    }
+    if (sessionId) {
+      body.sessionId = sessionId;
     }
 
     const response = await fetch(`${API_BASE_URL}/chat/${agentType}/stream`, {
@@ -138,7 +142,7 @@ export async function streamChat(
 
     const decoder = new TextDecoder();
     let fullText = '';
-    let sessionId: string | undefined;
+    let responseSessionId: string | undefined;
     let documentReady = false;
 
     while (true) {
@@ -168,9 +172,9 @@ export async function streamChat(
 
             if (json.done && json.fullText) {
               fullText = json.fullText;
-              sessionId = json.sessionId;
+              responseSessionId = json.sessionId;
               documentReady = json.documentReady || false;
-              onComplete(fullText, sessionId, documentReady);
+              onComplete(fullText, responseSessionId, documentReady);
               return;
             }
 
@@ -243,5 +247,207 @@ export async function getHistory(agentType?: string, limit: number = 20, token?:
     return [];
   } catch (error) {
     return [];
+  }
+}
+
+// Session types
+export interface Session {
+  id: string;
+  title?: string;
+  stage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PageVersion {
+  id: string;
+  version: number;
+  description?: string;
+  createdAt: string;
+}
+
+// Session API
+export async function getSessions(
+  agentType: 'pageBuilder' | 'career',
+  token?: string
+): Promise<Session[]> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sessions/${agentType}`, { headers });
+    const data = await response.json();
+    return data.success ? data.data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function createSession(
+  agentType: 'pageBuilder' | 'career',
+  title?: string,
+  token?: string
+): Promise<string | null> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sessions/${agentType}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ title }),
+    });
+    const data = await response.json();
+    return data.success ? data.data.sessionId : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function deleteSession(
+  agentType: 'pageBuilder' | 'career',
+  sessionId: string,
+  token?: string
+): Promise<boolean> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sessions/${agentType}/${sessionId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function getSessionConversations(
+  sessionId: string,
+  agentType: 'pageBuilder' | 'career' = 'pageBuilder',
+  token?: string
+): Promise<Message[]> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/sessions/${agentType}/${sessionId}/conversations`, { headers });
+    const data = await response.json();
+
+    if (data.success && Array.isArray(data.data)) {
+      const messages: Message[] = [];
+      data.data.forEach((item: any) => {
+        messages.push({
+          id: `${item.id}-user`,
+          role: 'user',
+          content: item.user_input,
+          timestamp: new Date(item.created_at)
+        });
+        messages.push({
+          id: `${item.id}-assistant`,
+          role: 'assistant',
+          content: item.agent_response,
+          timestamp: new Date(item.created_at)
+        });
+      });
+      return messages;
+    }
+    return [];
+  } catch (error) {
+    return [];
+  }
+}
+
+// Page version API
+export async function getPageVersions(
+  sessionId: string,
+  token?: string
+): Promise<PageVersion[]> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/page-versions/${sessionId}`, { headers });
+    const data = await response.json();
+    return data.success ? data.data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getPageVersion(
+  sessionId: string,
+  version: number,
+  token?: string
+): Promise<{ code: string } | null> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/page-versions/${sessionId}/${version}`, { headers });
+    const data = await response.json();
+    return data.success ? { code: data.data.code } : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function getLatestPageVersion(
+  sessionId: string,
+  token?: string
+): Promise<{ code: string; version: number } | null> {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/page-versions/${sessionId}/latest`, { headers });
+    const data = await response.json();
+    return data.success ? { code: data.data.code, version: data.data.version } : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function savePageVersion(
+  sessionId: string,
+  code: string,
+  description?: string,
+  token?: string
+): Promise<number | null> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/page-versions/${sessionId}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ code, description }),
+    });
+    const data = await response.json();
+    return data.success ? data.data.version : null;
+  } catch (error) {
+    return null;
   }
 }

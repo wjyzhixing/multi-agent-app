@@ -66,4 +66,28 @@ db.exec(`
   )
 `);
 
+// Page builder sessions table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS page_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    title TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// Page versions table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS page_versions (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES page_sessions(id)
+  )
+`);
+
 console.log('Database initialized successfully!');

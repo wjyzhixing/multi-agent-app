@@ -17,6 +17,9 @@ COPY . .
 
 RUN npm run build
 
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
+
 EXPOSE 3001
 
 CMD ["npm", "start"]
