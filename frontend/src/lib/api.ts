@@ -100,12 +100,13 @@ export async function getCurrentUser(token: string): Promise<{ success: boolean;
 
 // Streaming chat function
 export async function streamChat(
-  agentType: 'psychological' | 'aiTools' | 'career',
+  agentType: 'psychological' | 'aiTools' | 'career' | 'pageBuilder',
   input: string,
   onChunk: (text: string) => void,
   onComplete: (fullText: string, sessionId?: string, documentReady?: boolean) => void,
   onError: (error: string) => void,
-  token?: string
+  token?: string,
+  existingCode?: string
 ): Promise<void> {
   try {
     const headers: Record<string, string> = {
@@ -115,10 +116,15 @@ export async function streamChat(
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const body: Record<string, any> = { input };
+    if (existingCode) {
+      body.existingCode = existingCode;
+    }
+
     const response = await fetch(`${API_BASE_URL}/chat/${agentType}/stream`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ input }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

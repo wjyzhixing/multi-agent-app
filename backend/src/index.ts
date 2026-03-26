@@ -48,6 +48,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`   POST /chat/psychological - 心理疏导智能体`);
   console.log(`   POST /chat/aiTools - AI 工具推荐智能体`);
   console.log(`   POST /chat/career - 职业测评智能体`);
+  console.log(`   POST /chat/pageBuilder - 页面生成智能体`);
   console.log(`   GET  /history/:agentType - 历史记录`);
   console.log(`   POST /intent-check - 意图检测`);
   console.log(`   GET/PUT /documents/:sessionId - 文档管理`);

@@ -16,6 +16,7 @@ export interface AgentContext {
   userId?: string;
   conversationId?: string;
   history?: any[];
+  existingCode?: string;
 }
 
 export abstract class BaseAgent {

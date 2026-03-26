@@ -9,6 +9,7 @@ const menuItems = [
   { path: '/agents/psychological', label: '心理疏导' },
   { path: '/agents/ai-tools', label: 'AI 工具' },
   { path: '/agents/career', label: '职业测评' },
+  { path: '/agents/page-builder', label: '页面生成' },
 ];
 
 export default function Sidebar() {

@@ -30,7 +30,7 @@ export async function chatWithAI(request: AIChatRequest): Promise<string> {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: request.maxTokens || 1024,
+        max_tokens: request.maxTokens || 4096,
         messages: request.messages,
         system: request.system,
       }),
@@ -69,7 +69,7 @@ export async function chatWithAIStream(request: AIChatRequest): Promise<PassThro
         },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: request.maxTokens || 1024,
+          max_tokens: request.maxTokens || 4096,
           messages: request.messages,
           system: request.system,
           stream: true,
@@ -143,13 +143,13 @@ export async function chatWithAIStream(request: AIChatRequest): Promise<PassThro
 }
 
 // AI-based intent recognition
-export async function checkIntentWithAI(input: string, agentType: 'psychological' | 'aiTools' | 'career'): Promise<{ isRelevant: boolean; score: number; reason: string }> {
-  // Career agent doesn't need intent check - always relevant
-  if (agentType === 'career') {
+export async function checkIntentWithAI(input: string, agentType: 'psychological' | 'aiTools' | 'career' | 'pageBuilder'): Promise<{ isRelevant: boolean; score: number; reason: string }> {
+  // Career agent and PageBuilder don't need intent check - always relevant
+  if (agentType === 'career' || agentType === 'pageBuilder') {
     return {
       isRelevant: true,
       score: 1,
-      reason: 'Career assessment is always relevant',
+      reason: 'This agent type is always relevant',
     };
   }
 

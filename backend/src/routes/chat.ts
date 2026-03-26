@@ -2,6 +2,7 @@ import Router from '@koa/router';
 import { PsychologicalAgent } from '../agents/psychological';
 import { AIToolsAgent } from '../agents/ai-tools';
 import { CareerAgent } from '../agents/career';
+import { PageBuilderAgent } from '../agents/page-builder';
 import { getBlockMessage } from '../middleware/intent';
 import { checkIntentWithAI } from '../lib/ai-client';
 import { initConversation, getConversationHistory, getDocument, updateDocument } from '../db/init';
@@ -12,13 +13,15 @@ const router = new Router({ prefix: '' });
 const agents = {
   psychological: new PsychologicalAgent(),
   aiTools: new AIToolsAgent(),
-  career: new CareerAgent()
+  career: new CareerAgent(),
+  pageBuilder: new PageBuilderAgent()
 };
 
 interface ChatRequest {
   input: string;
   userId?: string;
   stream?: boolean;
+  existingCode?: string;
 }
 
 interface ChatResponse {
@@ -57,11 +60,11 @@ router.post('/chat/:agentType/stream', optionalAuthMiddleware, async (ctx: Param
 
   const agent = agents[agentType as keyof typeof agents];
 
-  // Use AI for intent recognition (skip for career agent)
-  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career');
+  // Use AI for intent recognition (skip for career and pageBuilder agents)
+  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career' | 'pageBuilder');
 
   // If intent is not relevant, return blocked response
-  if (!intentResult.isRelevant && agentType !== 'career') {
+  if (!intentResult.isRelevant && agentType !== 'career' && agentType !== 'pageBuilder') {
     const blockMessage = getBlockMessage(agentType as 'psychological' | 'aiTools');
     ctx.type = 'text/event-stream';
     ctx.set('Cache-Control', 'no-cache');
@@ -75,8 +78,11 @@ router.post('/chat/:agentType/stream', optionalAuthMiddleware, async (ctx: Param
   ctx.set('Connection', 'keep-alive');
   ctx.set('X-Accel-Buffering', 'no');
 
-  // Get stream from agent
-  const stream = await agent.processStream(input, { userId });
+  // Get stream from agent with existing code context
+  const stream = await agent.processStream(input, {
+    userId,
+    existingCode: body.existingCode
+  });
 
   // Pipe stream to response
   ctx.body = stream;
@@ -108,10 +114,10 @@ router.post('/chat/:agentType', async (ctx: ParameterizedContext) => {
 
   const agent = agents[agentType as keyof typeof agents];
 
-  // Use AI for intent recognition (skip for career agent)
-  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career');
+  // Use AI for intent recognition (skip for career and pageBuilder agents)
+  const intentResult = await checkIntentWithAI(input, agentType as 'psychological' | 'aiTools' | 'career' | 'pageBuilder');
 
-  if (!intentResult.isRelevant && agentType !== 'career') {
+  if (!intentResult.isRelevant && agentType !== 'career' && agentType !== 'pageBuilder') {
     const blockMessage = getBlockMessage(agentType as 'psychological' | 'aiTools');
 
     ctx.body = {
