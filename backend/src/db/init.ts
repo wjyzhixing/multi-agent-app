@@ -51,6 +51,11 @@ export function updateUserPassword(id: string, newPassword: string): void {
   stmt.run(hashedPassword, id);
 }
 
+export function getAllUsers(): User[] {
+  const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+  return stmt.all() as User[];
+}
+
 // Conversation functions
 export function initConversation(agentType: string, userInput: string, agentResponse: string, intentScore: number, isBlocked: boolean, sessionId?: string, userId?: string): string {
   const id = crypto.randomUUID();

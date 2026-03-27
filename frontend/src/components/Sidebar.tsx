@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 
 const menuItems = [
@@ -21,7 +21,16 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }: Sideb
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { user, loading, logout } = useAuth();
+  const [canManageUsers, setCanManageUsers] = useState(false);
+  const { user, loading, logout, token } = useAuth();
+
+  useEffect(() => {
+    if (user?.username === 'whmjack') {
+      setCanManageUsers(true);
+    } else {
+      setCanManageUsers(false);
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -122,6 +131,31 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }: Sideb
                 </li>
               );
             })}
+            {/* 用户管理 - 只有 whmjack 可见 */}
+            {canManageUsers && (
+              <li>
+                <Link
+                  href="/users"
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center justify-${isCollapsed ? 'center' : 'start'} px-${isCollapsed ? '2' : '4'} py-3 rounded-xl text-sm transition-all ${
+                    pathname === '/users'
+                      ? 'bg-neutral-900 text-white'
+                      : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800'
+                  }`}
+                  title={isCollapsed ? '用户管理' : undefined}
+                >
+                  {isCollapsed ? (
+                    <span className="w-6 h-6 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </span>
+                  ) : (
+                    '用户管理'
+                  )}
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -194,6 +228,22 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }: Sideb
                 </li>
               );
             })}
+            {/* 用户管理 - 只有 whmjack 可见 */}
+            {canManageUsers && (
+              <li>
+                <Link
+                  href="/users"
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-3 rounded-xl text-sm transition-all ${
+                    pathname === '/users'
+                      ? 'bg-neutral-900 text-white'
+                      : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800'
+                  }`}
+                >
+                  用户管理
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 

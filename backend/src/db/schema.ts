@@ -106,3 +106,20 @@ db.exec(`
 `);
 
 console.log('Database initialized successfully!');
+
+// Create built-in admin user if not exists
+import bcrypt from 'bcryptjs';
+
+const ADMIN_USERNAME = 'whmjack';
+const ADMIN_PASSWORD = 'wjyjack';
+
+const existingAdmin = db.prepare('SELECT id FROM users WHERE username = ?').get(ADMIN_USERNAME);
+if (!existingAdmin) {
+  const hashedPassword = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+  const adminId = crypto.randomUUID();
+  db.prepare(`
+    INSERT INTO users (id, username, email, password, role)
+    VALUES (?, ?, ?, ?, 'admin')
+  `).run(adminId, ADMIN_USERNAME, 'admin@local.host', hashedPassword);
+  console.log(`Built-in admin user '${ADMIN_USERNAME}' created successfully!`);
+}
