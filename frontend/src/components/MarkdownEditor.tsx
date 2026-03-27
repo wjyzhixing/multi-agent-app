@@ -263,6 +263,71 @@ export default function MarkdownEditor({
                 }
                 return <h3 className="text-lg font-semibold text-neutral-800 mt-6 mb-3">{children}</h3>;
               },
+              // Handle bold text that might be job titles
+              strong: ({ children }) => {
+                // Get text content - handle both string and nested elements
+                let text = '';
+                if (typeof children === 'string') {
+                  text = children;
+                } else if (Array.isArray(children)) {
+                  text = children.map(c => typeof c === 'string' ? c : '').join('');
+                } else {
+                  text = String(children);
+                }
+
+                // Check if children contains a career-job span
+                const hasCareerJobSpan = Array.isArray(children) && children.some(
+                  (child: any) => child?.props?.className?.includes?.('career-job')
+                );
+
+                if (hasCareerJobSpan && onJobExtend) {
+                  // Find the career-job span and extract job title
+                  const spanElement = Array.isArray(children)
+                    ? children.find((child: any) => child?.props?.className?.includes?.('career-job'))
+                    : null;
+                  const jobTitle = spanElement?.props?.children || text;
+
+                  return (
+                    <strong className="font-semibold text-neutral-800 inline-flex items-center gap-2 group">
+                      {children}
+                      <button
+                        onClick={() => onJobExtend(jobTitle)}
+                        className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-neutral-900 text-white rounded-full hover:bg-neutral-700 transition-all flex items-center gap-1 flex-shrink-0"
+                        title="查看详细扩展"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        扩展
+                      </button>
+                    </strong>
+                  );
+                }
+
+                return <strong className="font-semibold text-neutral-800">{children}</strong>;
+              },
+              // Handle span elements with career-job class
+              span: ({ className, children }) => {
+                if (className?.includes?.('career-job') && onJobExtend) {
+                  const jobTitle = typeof children === 'string' ? children : String(children);
+                  return (
+                    <span className="career-job inline-flex items-center gap-2 group">
+                      {children}
+                      <button
+                        onClick={() => onJobExtend(jobTitle)}
+                        className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-xs bg-neutral-900 text-white rounded-full hover:bg-neutral-700 transition-all flex items-center gap-1 flex-shrink-0"
+                        title="查看详细扩展"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        扩展
+                      </button>
+                    </span>
+                  );
+                }
+                return <span className={className}>{children}</span>;
+              },
             }}
           >
             {content}

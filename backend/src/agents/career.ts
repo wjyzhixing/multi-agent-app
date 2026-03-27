@@ -9,7 +9,6 @@ import {
   createDocument,
   getDocument,
   updateDocument,
-  initConversation,
   CareerSession
 } from '../db/init';
 import * as dotenv from 'dotenv';
@@ -165,9 +164,6 @@ export class CareerAgent extends BaseAgent {
           const reportIntro = '分析完成！以下是你的职业测评报告：\n\n';
           const fullReport = reportIntro + report;
 
-          // Save conversation history with session_id and user_id
-          initConversation('career', input, fullReport, 1, false, currentSessionId, userId);
-
           // Send report
           passThrough.write(`data: ${JSON.stringify({
             text: fullReport,
@@ -202,9 +198,6 @@ export class CareerAgent extends BaseAgent {
         });
 
         const fullResponse = progress + response + '\n\n' + nextQuestion;
-
-        // Save conversation history with session_id and user_id
-        initConversation('career', input, fullResponse, 1, false, currentSessionId, userId);
 
         passThrough.write(`data: ${JSON.stringify({
           text: fullResponse,
@@ -256,11 +249,14 @@ ${answerSummary}
 分析用户的性格、技能、价值观等核心特质（100字左右）
 
 ### 适合的职业方向
-推荐3-5个具体的职业方向，每个包含：
-- 职业名称
-- 匹配度（高/中/低）
-- 推荐理由（一句话）
-- 发展路径建议
+推荐3-5个具体的职业方向，每个格式如下：
+
+**<span class="career-job">职业名称</span>**
+- **匹配度**：高/中/低
+- **推荐理由**：一句话说明
+- **发展路径建议**：简述发展路径
+
+重要：每个职业名称必须用 \`<span class="career-job">职业名称</span>\` 包裹，这样前端可以识别并提供扩展功能。
 
 ### 能力雷达图
 使用 Mermaid 的 pie 图展示用户能力分布（技术能力、沟通能力、创造力、执行力、领导力），示例格式：
@@ -283,7 +279,8 @@ pie showData
 注意：
 - 报告要具体，不要泛泛而谈
 - 推荐的职业要符合用户的实际情况
-- Mermaid 图表使用 pie 语法，这是最广泛支持的格式`;
+- Mermaid 图表使用 pie 语法，这是最广泛支持的格式
+- 职业名称必须用 \`<span class="career-job">名称</span>\` 包裹`;
 
     try {
       const response = await chatWithAI({
