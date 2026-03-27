@@ -9,7 +9,8 @@ import {
   createDocument,
   getDocument,
   updateDocument,
-  CareerSession
+  CareerSession,
+  getCareerSessions
 } from '../db/init';
 import * as dotenv from 'dotenv';
 
@@ -88,6 +89,12 @@ export class CareerAgent extends BaseAgent {
 
         if (sessionId) {
           session = getCareerSession(sessionId);
+        }
+
+        // 优先查找已完成的 session（有报告的），后续直接问答，不再走七步问题
+        if (!session && userId) {
+          const allSessions = getCareerSessions(userId);
+          session = allSessions.find(s => s.stage === 'completed') || null;
         }
 
         if (!session) {
