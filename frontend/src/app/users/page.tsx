@@ -13,6 +13,11 @@ interface UserInfo {
   updatedAt: string;
 }
 
+// 本地开发用 /api，生产环境由 Nginx 转发
+const API_BASE_URL = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:3001'
+  : '/api';
+
 export default function UsersPage() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +40,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:3001/users/list', {
+      const response = await fetch(`${API_BASE_URL}/users/list`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

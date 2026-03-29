@@ -10,7 +10,7 @@ services:
       - PORT=3001
     volumes:
       # 使用本地目录存储数据（推荐，方便备份）
-      - ./data:/app/data
+      - /root/wjy/data:/app/data
       # 或者使用 Docker volume：
       # - backend-data:/app/data
     restart: unless-stopped
